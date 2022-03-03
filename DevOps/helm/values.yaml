@@ -5,18 +5,18 @@
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: k3s-server:5000/dotnet-webapi
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: latest
 
 imagePullSecrets: []
-nameOverride: ""
+nameOverride: "dotnet-webapi"
 fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: true
+  create: false
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
@@ -41,13 +41,21 @@ service:
   port: 80
 
 ingress:
-  enabled: false
-  annotations: {}
+  enabled: true
+  annotations:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
   hosts:
-    - host: chart-example.local
-      paths: []
+    - host: k3s-server.local
+      paths:
+      - path: /web-api
+        pathType: Prefix
+        backend:
+          service:
+            name: dotnet-webapi
+            port:
+              number: 80
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:

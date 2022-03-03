@@ -22,17 +22,18 @@ param (
 )
 
 $currentTask = ""
+$localPort = 8081
+$aspNetPort = 80
+$ASPNETCORE_URLS="http://+:$aspNetPort"
 
 # execute a script, checking lastexit code
 function executeSB
 {
 [CmdletBinding()]
 param(
-    [Parameter(Position=0)]
-    [string] $WorkingDirectory,
-    [Parameter(Mandatory,Position=1)]
+    [Parameter(Mandatory)]
     [scriptblock] $ScriptBlock,
-    [Parameter(Position=2)]
+    [string] $WorkingDirectory,
     [string] $TaskName = $currentTask
 )
     if ($WorkingDirectory) {
@@ -41,8 +42,9 @@ param(
         Push-Location $PSScriptRoot
     }
     try {
+        $global:LASTEXITCODE = 0
+
         Invoke-Command -ScriptBlock $ScriptBlock
-        $LASTEXITCODE = 0
 
         if ($LASTEXITCODE -ne 0) {
             throw "Error executing command '$TaskName', last exit $LASTEXITCODE"
@@ -73,13 +75,25 @@ foreach ($currentTask in $Tasks) {
                     dotnet build
                 }
             }
+            'run' {
+                executeSB -WorkingDirectory "src/$imageName" {
+                    dotnet run
+                }
+            }
             'runDocker' {
                 executeSB {
-                    docker run --rm dotnet-test
+                    docker run --rm `
+                               --publish ${localPort}:$aspNetPort `
+                               --env "ASPNETCORE_URLS=$ASPNETCORE_URLS" `
+                               --env "ASPNETCORE_HTTPS_PORT=8081" `
+                               --interactive `
+                               --tty `
+                               --name $imageName `
+                               "${imageName}:latest"
                 }
               }
             'buildDocker' {
-                executeSB 'src/dotnet-webapi' {
+                executeSB -WorkingDirectory 'src/dotnet-webapi' {
                     docker build --rm `
                                  --tag ${imageName}:latest `
                                  --file ../../DevOps/Docker/Dockerfile `
