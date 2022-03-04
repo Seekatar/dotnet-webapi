@@ -4,6 +4,7 @@ namespace dotnet_webapi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+// [Route("web-api/[controller]")]
 public class WeatherForecastController : ControllerBase
 {
     private static readonly string[] Summaries = new[]

@@ -134,7 +134,7 @@ foreach ($currentTask in $Tasks) {
                         if ($Wait) {
                             $extra += '--wait'
                         }
-                        helm install $imageName . --values $valuesFile @extra @sets
+                        helm upgrade --install --values $valuesFile $imageName @sets . @extra
                     }
                 }
             }

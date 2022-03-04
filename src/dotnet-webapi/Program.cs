@@ -7,7 +7,11 @@ foreach ( var e in env.Keys)
 {
     WriteLine($"   {e} => '{env[e]}'");
 }
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions {
+    Args = args,
+    // no access denied to path WebRootPath = "/web-api",
+    // must exist ContentRootPath = "/web-api2"
+});
 
 // Add services to the container.
 
@@ -16,15 +20,21 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// adding these two fixed base-path issue
+// now can hit on / and /web-api locally
+app.UsePathBase("/web-api");
+app.UseRouting();
+
+// let's always show Swagger
 //if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// let's avoid Https issues for now
 // app.UseHttpsRedirection();
 
 // app.UseAuthorization();
