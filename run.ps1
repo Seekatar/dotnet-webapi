@@ -18,12 +18,14 @@ param (
         }
      })]
     [string[]] $Tasks,
-    [switch] $DryRun
+    [switch] $DryRun,
+    [switch] $Wait,
+    [string] $Tag = [DateTime]::Now.ToString("MMdd-HHmmss")
 )
 
 $currentTask = ""
 $localPort = 8081
-$aspNetPort = 80
+$aspNetPort = 8080
 $ASPNETCORE_URLS="http://+:$aspNetPort"
 
 # execute a script, checking lastexit code
@@ -33,11 +35,11 @@ function executeSB
 param(
     [Parameter(Mandatory)]
     [scriptblock] $ScriptBlock,
-    [string] $WorkingDirectory,
-    [string] $TaskName = $currentTask
+    [string] $RelativeDir,
+    [string] $Name = $currentTask
 )
-    if ($WorkingDirectory) {
-        Push-Location (Join-Path $PSScriptRoot $WorkingDirectory)
+    if ($RelativeDir) {
+        Push-Location (Join-Path $PSScriptRoot $RelativeDir)
     } else {
         Push-Location $PSScriptRoot
     }
@@ -47,12 +49,10 @@ param(
         Invoke-Command -ScriptBlock $ScriptBlock
 
         if ($LASTEXITCODE -ne 0) {
-            throw "Error executing command '$TaskName', last exit $LASTEXITCODE"
+            throw "Error executing command '$Name', last exit $LASTEXITCODE"
         }
     } finally {
-        if ($WorkingDirectory) {
-            Pop-Location
-        }
+        Pop-Location
     }
 }
 
@@ -76,7 +76,7 @@ foreach ($currentTask in $Tasks) {
                 }
             }
             'run' {
-                executeSB -WorkingDirectory "src/$imageName" {
+                executeSB -RelativeDir "src/$imageName" {
                     dotnet run
                 }
             }
@@ -85,47 +85,65 @@ foreach ($currentTask in $Tasks) {
                     docker run --rm `
                                --publish ${localPort}:$aspNetPort `
                                --env "ASPNETCORE_URLS=$ASPNETCORE_URLS" `
-                               --env "ASPNETCORE_HTTPS_PORT=8081" `
+                               --env "ASPNETCORE_HTTPS_PORT=$aspNetPort" `
                                --interactive `
                                --tty `
                                --name $imageName `
-                               "${imageName}:latest"
+                               "${imageName}:$Tag"
                 }
               }
             'buildDocker' {
-                executeSB -WorkingDirectory 'src/dotnet-webapi' {
+                executeSB -RelativeDir 'src/dotnet-webapi' {
                     docker build --rm `
-                                 --tag ${imageName}:latest `
+                                 --tag ${imageName}:$Tag `
                                  --file ../../DevOps/Docker/Dockerfile `
                                  .
                 }
             }
             'pushDocker' {
                 executeSB {
-                    docker image tag $imageName $dockerRegistry/$imageName
-                    docker push $dockerRegistry/$imageName
+                    docker image tag ${imageName}:$Tag $dockerRegistry/${imageName}:$Tag
+                    docker push $dockerRegistry/${imageName}:$Tag
+                }
+            }
+            'stopDocker' {
+                executeSB {
+                    docker stop $imageName
                 }
             }
             'installHelm' {
                 $valuesFile = Join-Path $PSScriptRoot DevOps/helm/values.yaml
-                $outputFile = Join-Path $env:Temp dry-run.yaml
+
+                $sets = @(
+                    '--set', "image.tag=$Tag"
+                )
+
                 if ($DryRun) {
-                    executeSB 'DevOps/helm' {
+                    $outputFile = Join-Path $env:Temp dry-run.yaml
+                    Remove-Item $outputFile -ErrorAction Ignore | Out-Null
+
+                    executeSB -R 'DevOps/helm' {
                         helm install DRY-RUN . --dry-run --values $valuesFile | ForEach-Object {
                             $_ -replace "LAST DEPLOYED: .*","LAST DEPLOYED: NEVER"
                         } | Out-File $outputFile -Append
                         "Output in now $outputFile"
                     }
                 } else {
-                    executeSB 'DevOps/helm' {
-                        helm install $imageName . --values $valuesFile
+                    executeSB -R 'DevOps/helm' {
+                        $extra = @()
+                        if ($Wait) {
+                            $extra += '--wait'
+                        }
+                        helm install $imageName . --values $valuesFile @extra @sets
                     }
                 }
             }
             'uninstallHelm' {
-                executeSB {
-                    helm uninstall $imageName
-                }
+                try {
+                    executeSB {
+                        helm uninstall $imageName
+                    }
+                } catch {}
             }
             default {
                 throw "Invalid task name $currentTask"

@@ -8,7 +8,7 @@ image:
   repository: k3s-server:5000/dotnet-webapi
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
+  tag: ""
 
 imagePullSecrets: []
 nameOverride: "dotnet-webapi"
@@ -16,12 +16,12 @@ fullnameOverride: ""
 
 serviceAccount:
   # Specifies whether a service account should be created
-  create: false
+  create: true
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: "dotnet"
 
 podAnnotations: {}
 
@@ -38,7 +38,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 80
+  port: 8080
 
 ingress:
   enabled: true
@@ -55,7 +55,7 @@ ingress:
           service:
             name: dotnet-webapi
             port:
-              number: 80
+              number: 8080
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:

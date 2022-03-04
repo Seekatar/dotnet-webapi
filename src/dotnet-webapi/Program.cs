@@ -1,3 +1,12 @@
+using static System.Console;
+
+WriteLine("Environment");
+
+var env = Environment.GetEnvironmentVariables();
+foreach ( var e in env.Keys)
+{
+    WriteLine($"   {e} => '{env[e]}'");
+}
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,10 +25,14 @@ var app = builder.Build();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
-app.UseAuthorization();
+// app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapGet("/", () => "dotnet-webapi. Check /health/live and /health/ready" );
+app.MapGet("/health/ready", () => "ready" );
+app.MapGet("/health/live", () => "live" );
 
 app.Run();
