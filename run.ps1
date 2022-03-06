@@ -123,7 +123,7 @@ foreach ($currentTask in $Tasks) {
                     Remove-Item $outputFile -ErrorAction Ignore | Out-Null
 
                     executeSB -R 'DevOps/helm' {
-                        helm install DRY-RUN . --dry-run --values $valuesFile | ForEach-Object {
+                        helm install $imageName . --dry-run --values $valuesFile | ForEach-Object {
                             $_ -replace "LAST DEPLOYED: .*","LAST DEPLOYED: NEVER"
                         } | Out-File $outputFile -Append
                         "Output in now $outputFile"

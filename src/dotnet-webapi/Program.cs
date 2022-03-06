@@ -1,17 +1,4 @@
-using static System.Console;
-
-WriteLine("Environment");
-
-var env = Environment.GetEnvironmentVariables();
-foreach ( var e in env.Keys)
-{
-    WriteLine($"   {e} => '{env[e]}'");
-}
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions {
-    Args = args,
-    // no access denied to path WebRootPath = "/web-api",
-    // must exist ContentRootPath = "/web-api2"
-});
+var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
@@ -20,29 +7,34 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
-// adding these two fixed base-path issue
-// now can hit on / and /web-api locally
+// Configure the HTTP request pipeline.
+
+// Since our K8s ingress has path of /web-api add these two
+// lines to prepend all our routed with /web-api
+// Run locally you, can hit / and /web-api
+// See https://docs.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-6.0
 app.UsePathBase("/web-api");
 app.UseRouting();
 
-// let's always show Swagger
+// let's always show Swagger, so comment this out
 //if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// let's avoid Https issues for now
+// let's assume TLS termination before K8s
 // app.UseHttpsRedirection();
 
-// app.UseAuthorization();
+app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/", () => "dotnet-webapi. Check /health/live and /health/ready" );
-app.MapGet("/health/ready", () => "ready" );
-app.MapGet("/health/live", () => "live" );
+// add root and health checks
+app.MapGet("/", () => "dotnet-webapi. Check /web-api/health/live and /web-api/health/ready");
+app.MapGet("/health/ready", () => "ready");
+app.MapGet("/health/live", () => "live");
 
 app.Run();
