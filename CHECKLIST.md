@@ -21,8 +21,8 @@ The "Windows" box is the one used for development and could be other OSes.
 
 ## k3s-server
 
-- [ ] Set static IP to x.x.x.200 in `/etc/dhcpcd.conf`
-- [ ] In `/boot/cmdline.txt` and add `cgroup_memory=1 cgroup_enable=memory`
+- [ ] `sudo nano /etc/dhcpcd.conf` to set static IP to x.x.x.200
+- [ ] `sudo nano /boot/cmdline.txt` and add `cgroup_memory=1 cgroup_enable=memory`
 - [ ] Disable swap
 
     ```bash
@@ -31,19 +31,22 @@ The "Windows" box is the one used for development and could be other OSes.
     ```
 
 - [ ] `sudo reboot`
-- [ ] Install K3s `curl -sfL https://get.k3s.io | sh -`
-- [ ] Copy `/var/lib/rancher/k3s/server/node-token` locally
-- [ ] Copy `/etc/rancher/k3s/k3s.yaml` to `~/.kube/k3s-config` locally
-- [ ] Install Docker `curl -sSL https://get.docker.com | sh`
-- [ ] Install Docker Registry ``
-- [ ] Add Registry Mirror. Edit `/etc/rancher/k3s/registries.yaml`
+- [ ] `curl -sfL https://get.k3s.io | sh -` to install K3s
+- [ ] `sudo cat /var/lib/rancher/k3s/server/node-token` and copy locally
+- [ ] `sudo cat /etc/rancher/k3s/k3s.yaml` and save to `~/.kube/k3s-config` locally
+- [ ] `curl -sSL https://get.docker.com | sh` to install Docker. It will warn about non-root docker
+- [ ] `sudo usermod -aG docker $USER` to add current user (pi) to Docker group
+- [ ] `docker run -d -p 5000:5000 --restart always --name registry registry:2` to install Docker Registry
+- [ ] `sudo nano /etc/rancher/k3s/registries.yaml` to add Registry Mirror.
 
     ```yaml
     mirrors:
-    "k3s-server:5000":
+      "k3s-server:5000":
         endpoint:
         - "http://k3s-server:5000"
     ```
+
+- [ ] `sudo systemctl restart k3s`
 
 ## k3s-worker-n
 
@@ -61,25 +64,26 @@ The "Windows" box is the one used for development and could be other OSes.
 
     ```bash
     export K3S_TOKEN="<token from server's /var/lib/rancher/k3s/server/node-token>"
-    export K3S_SERVER="https://<server's static ip>:6443"
+    export K3S_SERVER="https://<ipaddress of server>:6443"
     curl -sfL https://get.k3s.io | K3S_URL=$K3S_SERVER K3S_TOKEN=$K3S_TOKEN sh -
     ```
 
-- [ ] Add Registry Mirror. Edit `/etc/rancher/k3s/registries.yaml`
+- [ ] `sudo nano /etc/rancher/k3s/registries.yaml` to add Registry Mirror.
 
     ```yaml
     mirrors:
-    "k3s-server:5000":
+      "k3s-server:5000":
         endpoint:
         - "http://k3s-server:5000"
     ```
+- [ ] `sudo systemctl restart k3s-agent`
 
 ## Windows Step 2
 
-- [ ] Edit `~/.kube/k3s-config` to set `localhost` to `k3s-server`
-- [ ] Set kubectl/helm default context `$env:KUBECONFIG='~/.kube/k3s-config'`
-- [ ] Create docker context `docker context create k3s-server --docker "host=ssh://pi@k3s-server"`
-- [ ] Set default docker context `docker context use k3s-server`
+- [ ] `code ~/.kube/k3s-config` and change `localhost` to `k3s-server`
+- [ ] `$env:KUBECONFIG='~/.kube/k3s-config'` to set kubectl/helm default context
+- [ ] `docker context create k3s-server --docker "host=ssh://pi@k3s-server"` to create docker context
+- [ ] `docker context use k3s-server` to set the default docker context
 - [ ] Verify install
 
     ```bash
@@ -88,4 +92,5 @@ The "Windows" box is the one used for development and could be other OSes.
     kubectl get nodes -o wide
     ```
 
-- [ ] Deploy with helm `.\run.ps1 buildDocker,pushDocker,uninstallHelm,installHelm  -Tag 01a`
+- [ ] `.\run.ps1 buildDocker,pushDocker,uninstallHelm,installHelm  -Tag 01a` to deploy with web-api via helm
+- [ ] Hit the deployed app [http://k3s-server/web-api/weatherforecast](http://k3s-server/web-api/weatherforecast)
