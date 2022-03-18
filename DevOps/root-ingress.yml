@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  creationTimestamp: "2022-03-08T01:30:44Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/instance: dotnet-webapi-root
+    app.kubernetes.io/name: dotnet-webapi-root
+    app.kubernetes.io/version: 1.16.0
+  name: dotnet-webapi-root
+  namespace: default
+  resourceVersion: "123432"
+  uid: cffd878a-6017-4503-8187-424776075143
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: dotnet-webapi
+            port:
+              number: 8080
+        path: /
+        pathType: Prefix
+  # - host: '192.168.1.200'
+  #   http:
+  #     paths:
+  #     - backend:
+  #         service:
+  #           name: dotnet-webapi
+  #           port:
+  #             number: 8080
+  #       path: /
+  #       pathType: Prefix

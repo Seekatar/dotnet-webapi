@@ -46,9 +46,9 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
     traefik.ingress.kubernetes.io/router.entrypoints: web
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: k3s-server
-      paths:
+    - paths:
       - path: /web-api
         pathType: Prefix
         backend:
@@ -56,7 +56,11 @@ ingress:
             name: dotnet-webapi
             port:
               number: 8080
-  tls: []
+  tls:
+    - hosts:
+      - seekatar.duckdns.org
+      secretName: seekatar-duckdns-org-tls
+
   #  - secretName: chart-example-tls
   #    hosts:
   #      - chart-example.local

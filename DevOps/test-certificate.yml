@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: seekatar-duckdns-org
+  namespace: default
+spec:
+  secretName: seekatar-duckdns-org-tls
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  commonName: seekatar.duckdns.org
+  dnsNames:
+  - seekatar.duckdns.org
