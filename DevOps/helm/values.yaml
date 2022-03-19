@@ -48,8 +48,18 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: web
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - paths:
-      - path: /web-api
+    - host: seekatar.duckdns.org
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dotnet-webapi
+            port:
+              number: 8080
+    - host: k3s-server
+      paths:
+      - path: /
         pathType: Prefix
         backend:
           service:

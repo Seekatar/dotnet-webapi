@@ -1,0 +1,30 @@
+# helm repo remove shubhamtatvamasi
+# helm repo add shubhamtatvamasi https://shubhamtatvamasi.github.io/helm
+# helm install my-nginx shubhamtatvamasi/nginx --version 0.1.12
+# k apply -f C:\code\dotnet-webapi\DevOps\nginx-ingress.yml
+# k delete ingress nginx-ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+  annotations:
+    # added this to fix not routing!!
+    kubernetes.io/ingress.class: "traefik"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+  - host: seekatar.duckdns.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-nginx
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - seekatar.duckdns.org
+    secretName: seekatar-duckdns-org-tls

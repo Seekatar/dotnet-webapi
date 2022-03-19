@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
+    cert-manager.io/cluster-issuer: letsencrypt-prod
   creationTimestamp: "2022-03-08T01:30:44Z"
   generation: 1
   labels:
@@ -24,6 +25,11 @@ spec:
               number: 8080
         path: /
         pathType: Prefix
+  tls:
+  - hosts:
+    - seekatar.duckdns.org
+    secretName: seekatar-duckdns-org-tls
+
   # - host: '192.168.1.200'
   #   http:
   #     paths:
