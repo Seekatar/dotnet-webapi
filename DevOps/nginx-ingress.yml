@@ -8,9 +8,10 @@ kind: Ingress
 metadata:
   name: nginx-ingress
   annotations:
-    # added this to fix not routing!!
+    # 1 added this to fix not routing!! and 2 below
     kubernetes.io/ingress.class: "traefik"
     cert-manager.io/cluster-issuer: letsencrypt-prod
+    # 2 comment this out too
     # traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
